@@ -14,25 +14,11 @@ app.get('/', (req, res) => {
     res.send('🚀 PipeLine Server is Running Successfully!');
 });
 
-// İzin verilen adresler (Localhost ve ilerideki Vercel adresi)
-const ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "https://pipeline-web-coral.vercel.app" // Bunu ekledik
-];
-
 const io = new Server(server, {
     cors: {
-        origin: (origin, callback) => {
-            // Eğer origin yoksa (Postman vs) veya listedeyse izin ver
-            if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-                callback(null, true);
-            } else {
-                console.log("Engellenen Origin:", origin); // Log ekleyelim ki hatayı görelim
-                callback(new Error('Not allowed by CORS'));
-            }
-        },
-        methods: ["GET", "POST"]
+        origin: "*", // DÜZELTME: Tüm kaynaklara izin ver (Kesin çözüm)
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
