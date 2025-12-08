@@ -1,13 +1,15 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'; // Link import edildi
 import { HomePage } from './presentation/pages/HomePage';
 import { DownloadPage } from './presentation/pages/DownloadPage';
+import { AboutPage } from './presentation/pages/AboutPage'; // Yeni
+import { PrivacyPage } from './presentation/pages/PrivacyPage'; // Yeni
 
 function App() {
   return (
     <BrowserRouter>
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         
-        {/* Modern Header (Glassmorphism) */}
+        {/* Header (Aynı kalacak) */}
         <nav style={{ 
           padding: '1.5rem 2rem', 
           background: 'rgba(30, 30, 30, 0.8)', 
@@ -16,9 +18,7 @@ function App() {
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100
+          position: 'sticky', top: 0, zIndex: 100
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '1.5rem' }}>🚀</span>
@@ -27,32 +27,30 @@ function App() {
             </span>
           </div>
           <div style={{ display: 'flex', gap: '20px' }}>
-            <a href="/" style={{ color: '#fff', textDecoration: 'none', fontWeight: '500', opacity: 0.8, transition: 'opacity 0.2s' }} onMouseOver={e => e.currentTarget.style.opacity = '1'} onMouseOut={e => e.currentTarget.style.opacity = '0.8'}>Home</a>
-            <a href="https://github.com/emirhannsarial" target="_blank" style={{ color: '#fff', textDecoration: 'none', fontWeight: '500', opacity: 0.8 }}>GitHub</a>
+            <Link to="/" style={{ color: '#fff', textDecoration: 'none', fontWeight: '500' }}>Home</Link>
+            <Link to="/about" style={{ color: '#fff', textDecoration: 'none', fontWeight: '500' }}>About</Link>
           </div>
         </nav>
 
-        {/* Ana İçerik */}
+        {/* Routes */}
         <main style={{ flex: 1 }}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/download/:roomId" element={<DownloadPage />} />
+            <Route path="/about" element={<AboutPage />} /> {/* Yeni Route */}
+            <Route path="/privacy" element={<PrivacyPage />} /> {/* Yeni Route */}
           </Routes>
         </main>
 
-        {/* Modern Footer */}
+        {/* Footer */}
         <footer style={{ 
-          textAlign: 'center', 
-          padding: '2rem', 
-          background: '#0a0a0a', 
-          color: '#666', 
-          fontSize: '0.9rem',
-          borderTop: '1px solid #222'
+          textAlign: 'center', padding: '2rem', background: '#0a0a0a', color: '#666', 
+          fontSize: '0.9rem', borderTop: '1px solid #222'
         }}>
           <p>© {new Date().getFullYear()} PipeLine.web — Serverless, Limitless, Secure.</p>
           <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'center', gap: '15px' }}>
-            <span style={{ cursor: 'pointer' }}>Privacy Policy</span>
-            <span style={{ cursor: 'pointer' }}>Terms of Service</span>
+            <Link to="/privacy" style={{ color: '#666', textDecoration: 'none' }}>Privacy Policy</Link>
+            <Link to="/about" style={{ color: '#666', textDecoration: 'none' }}>About Us</Link>
           </div>
         </footer>
 

@@ -19,13 +19,21 @@ export class WebRTCPeerRepository implements IPeerRepository {
     initialize(isInitiator: boolean): void {
         console.log(`WebRTC Başlatılıyor. Initiator mı? ${isInitiator}`);
 
-        this.peer = new SimplePeer({
+         this.peer = new SimplePeer({
             initiator: isInitiator,
             trickle: false,
             config: {
                 iceServers: [
+                    // Google STUN (Adres Bulucu)
                     { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478' }
+                    { urls: 'stun:global.stun.twilio.com:3478' },
+                    
+                    // Ücretsiz TURN Listesi (OpenRelayProject.org'dan örnek)
+                    // Not: Bu statik liste zamanla değişebilir.
+                    // En doğrusu kendi Metered.ca veya Twilio hesabından API ile almaktır.
+                    // Şimdilik açık kaynaklı bilinen sunucuları ekliyoruz:
+                    { urls: 'stun:stun.piratenbrandenburg.de:3478' },
+                    { urls: 'stun:stun.voipgate.com:3478' }
                 ]
             }
         });
