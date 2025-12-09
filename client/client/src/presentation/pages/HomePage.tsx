@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTransferStore } from '../store/useTransferStore';
-
+import QRCode from "react-qr-code";
 export const HomePage = () => {
   const { createRoom, roomId, connectionStatus, progress, selectedFile, selectFile, transferState, resetTransfer } = useTransferStore();
   const [showToast, setShowToast] = useState(false);
@@ -77,18 +77,24 @@ export const HomePage = () => {
                 {isConnected ? '🟢 Peer Connected - Transferring' : '🟡 Waiting for Peer...'}
               </div>
 
-              {!isConnected && (
-                <>
-                  <p style={{ marginBottom: '10px' }}>Send this link to the receiver:</p>
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-                    <input type="text" readOnly value={shareLink} onClick={(e) => e.currentTarget.select()} />
-                    <button onClick={copyToClipboard}>Copy Link</button>
-                  </div>
-                  <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '15px' }}>
-                    ⚠️ Do not close this tab until transfer is complete.
-                  </p>
-                </>
-              )}
+              {/* Link Paylaşımı Kısmı */}
+          {!isConnected && (
+            <>
+              <p style={{ marginBottom: '10px' }}>Send this link to the receiver:</p>
+              
+              {/* QR KOD ALANI (YENİ) */}
+              <div style={{ background: 'white', padding: '10px', width: 'fit-content', margin: '0 auto 20px auto', borderRadius: '8px' }}>
+                  <QRCode value={shareLink} size={128} />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+                <input type="text" readOnly value={shareLink} onClick={(e) => e.currentTarget.select()} />
+                <button onClick={copyToClipboard}>Copy Link</button>
+              </div>
+              
+              {/* ... */}
+            </>
+          )}
 
               {/* İlerleme ve Durum */}
           {isConnected && (
@@ -141,7 +147,7 @@ export const HomePage = () => {
           📢 Ad Space (160x600)
         </div>
       </div>
-      
+
     {/* SEO CONTENT SECTION */}
     <section style={{ maxWidth: '800px', margin: '60px auto', textAlign: 'left', color: '#888' }}>
         <h2>Why PipeLine.web is the Best WeTransfer Alternative?</h2>
