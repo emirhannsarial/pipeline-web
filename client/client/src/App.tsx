@@ -3,7 +3,7 @@ import { HomePage } from './presentation/pages/HomePage';
 import { DownloadPage } from './presentation/pages/DownloadPage';
 import { AboutPage } from './presentation/pages/AboutPage';
 import { PrivacyPage } from './presentation/pages/PrivacyPage';
-
+import { TermsPage } from './presentation/pages/TermsPage';
 function App() {
   return (
     <BrowserRouter>
@@ -30,7 +30,7 @@ function App() {
               WebkitTextFillColor: 'transparent',
               letterSpacing: '-0.5px'
             }}>
-              PipeLine.web
+              AirShift
             </span>
           </div>
           <div style={{ display: 'flex', gap: '25px', fontSize: '0.95rem' }}>
@@ -46,6 +46,7 @@ function App() {
             <Route path="/download/:roomId" element={<DownloadPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
           </Routes>
         </main>
 
@@ -54,9 +55,10 @@ function App() {
           textAlign: 'center', padding: '2rem', background: '#080808', color: '#555', 
           fontSize: '0.85rem', borderTop: '1px solid #1a1a1a', marginTop: 'auto'
         }}>
-          <p style={{ marginBottom: '10px' }}>© {new Date().getFullYear()} PipeLine.web — Direct P2P File Transfer.</p>
+          <p style={{ marginBottom: '10px' }}>© {new Date().getFullYear()} AirShift — Serverless, Limitless, Secure.</p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
             <Link to="/privacy" style={{ color: '#555', textDecoration: 'none' }}>Privacy Policy</Link>
+            <Link to="/terms" style={{ color: '#555', textDecoration: 'none' }}>Terms of Service</Link>
             <Link to="/about" style={{ color: '#555', textDecoration: 'none' }}>About</Link>
             <a href="https://github.com/emirhannsarial/pipeline-web" target="_blank" style={{ color: '#555', textDecoration: 'none' }}>GitHub</a>
           </div>

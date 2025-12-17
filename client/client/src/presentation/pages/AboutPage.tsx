@@ -18,7 +18,7 @@ export const AboutPage = () => (
         <h2 style={{ color: '#646cff' }}>P2P Tunneling</h2>
         <p style={{ color: '#ccc', lineHeight: '1.6' }}>
           Traditional services upload your file to a cloud server. 
-          <strong>PipeLine.web</strong> creates a direct tunnel between two browsers using WebRTC technology.
+          <strong>AirShift</strong> creates a direct tunnel between two browsers using WebRTC technology.
         </p>
       </div>
 

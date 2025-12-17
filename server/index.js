@@ -11,7 +11,7 @@ const server = http.createServer(app);
 
 // YENİ EKLENECEK KISIM: Ana sayfaya girince mesaj göster
 app.get('/', (req, res) => {
-    res.send('🚀 PipeLine Server is Running Successfully!');
+    res.send('🚀 AirShift Server is Running Successfully!');
 });
 
 const io = new Server(server, {

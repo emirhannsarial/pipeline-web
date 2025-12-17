@@ -148,14 +148,36 @@ export const HomePage = () => {
         </div>
       </div>
 
-    {/* SEO CONTENT SECTION */}
-    <section style={{ maxWidth: '800px', margin: '60px auto', textAlign: 'left', color: '#888' }}>
-        <h2>Why PipeLine.web is the Best WeTransfer Alternative?</h2>
-        <p>Looking for a <strong>free WeTransfer alternative</strong>? PipeLine.web allows you to <strong>send large files</strong> without any size limits. Unlike traditional cloud services, we use WebRTC for direct <strong>P2P file transfer</strong>.</p>
+{/* --- ADSENSE İÇİN SEO İÇERİK BLOĞU --- */}
+      <div style={{ maxWidth: '800px', margin: '80px auto', textAlign: 'left', color: '#888', lineHeight: '1.8' }}>
+        <hr style={{ borderColor: '#333', marginBottom: '40px' }} />
         
-        <h3>How to send unlimited files for free?</h3>
-        <p> simply select your file, create a link, and share it. Our <strong>serverless file sharing</strong> technology ensures your data remains private and secure.</p>
-    </section>
+        <h2>Why Choose AirShift for File Transfer?</h2>
+        <p>
+          In the digital age, sharing large files shouldn't be complicated. AirShift offers a revolutionary approach to file sharing by utilizing <strong>WebRTC technology</strong>. Unlike traditional services like WeTransfer or Google Drive, we do not store your files on any server.
+        </p>
+
+        <h3>🚀 Truly Unlimited File Sharing</h3>
+        <p>
+          Most email services limit attachments to 25MB. Cloud services often require you to pay for extra storage. With AirShift, the only limit is your device's storage. Whether you are sending a 100GB video project or a massive database backup, our P2P AirShift handles it with ease.
+        </p>
+
+        <h3>🔒 End-to-End Encryption & Privacy</h3>
+        <p>
+          Your privacy is our priority. Since your files are streamed directly from the sender to the receiver, there is no "middleman". We cannot see your files, and hackers cannot intercept them from a central server because there isn't one. All data is encrypted using <strong>DTLS (Datagram Transport Layer Security)</strong> standards.
+        </p>
+
+        <h3>⚡ Blazing Fast P2P Speed</h3>
+        <p>
+          Why wait for a file to upload to a server, only to wait again for it to download? AirShift streams data in real-time. If you are on the same Wi-Fi network, transfers happen at local network speeds (LAN), which can be up to 10x faster than cloud uploads.
+        </p>
+
+        <h3>📱 No Registration Required</h3>
+        <p>
+          We believe in simplicity. You don't need to create an account, verify an email, or remember another password. Just select a file, copy the secure link, and share it. It works on Windows, macOS, Android, and iOS directly from the browser.
+        </p>
+      </div>
+      {/* ------------------------------------- */}
 
     {showToast && <div className="toast">✅ Link copied to clipboard!</div>}
     </div>
