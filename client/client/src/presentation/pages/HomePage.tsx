@@ -1,9 +1,24 @@
 import { useState } from 'react';
 import { useTransferStore } from '../store/useTransferStore';
 import QRCode from "react-qr-code";
+import { AlertModal } from '../components/AlertModal';
+
 export const HomePage = () => {
-  const { createRoom, roomId, connectionStatus, progress, selectedFile, selectFile, transferState, resetTransfer } = useTransferStore();
+  const { 
+    createRoom, 
+    roomId, 
+    connectionStatus, 
+    progress, 
+    selectedFile, 
+    selectFile, 
+    transferState, 
+    resetTransfer, 
+    peerLeft, // DÜZELTME: senderLeft yerine peerLeft
+    logs 
+  } = useTransferStore();
+  
   const [showToast, setShowToast] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
   
   const shareLink = roomId ? `${window.location.origin}/download/${roomId}` : '';
 
@@ -17,15 +32,10 @@ export const HomePage = () => {
 
   return (
     <div className="container">
-      {/* 3 Sütunlu Yapı */}
       <div className="main-layout">
         
-        {/* SOL REKLAM (Masaüstünde görünür) */}
-        <div className="ad-sidebar">
-          📢 Ad Space (160x600)
-        </div>
+        <div className="ad-sidebar">📢 Ad Space (160x600)</div>
 
-        {/* ORTA İÇERİK */}
         <div className="content-area">
           <div style={{ marginBottom: '3rem' }}>
             <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>Send Files Without Limits</h1>
@@ -34,7 +44,17 @@ export const HomePage = () => {
             </p>
           </div>
 
-          {/* Durum 1: Dosya Seç */}
+          {/* ALICI KAÇTI MODALI (peerLeft kullanıldı) */}
+          {peerLeft && (
+            <AlertModal 
+              title="Receiver Disconnected" 
+              message="The receiver has closed the tab or lost connection."
+              actionText="Reload Page"
+              type="error"
+              onAction={() => window.location.reload()}
+            />
+          )}
+
           {!roomId && !selectedFile && (
             <div className="card upload-zone">
               <label style={{ cursor: 'pointer', display: 'block', padding: '40px' }}>
@@ -50,7 +70,6 @@ export const HomePage = () => {
             </div>
           )}
 
-          {/* Durum 2: Link Oluştur */}
           {!roomId && selectedFile && (
             <div className="card">
               <div style={{ fontSize: '60px', marginBottom: '15px' }}>📄</div>
@@ -70,117 +89,96 @@ export const HomePage = () => {
             </div>
           )}
 
-          {/* Durum 3: Paylaş ve Bekle */}
           {roomId && (
             <div className="card">
               <div className={`status-badge ${isConnected ? 'status-connected' : 'status-waiting'}`}>
-                {isConnected ? '🟢 Peer Connected - Transferring' : '🟡 Waiting for Peer...'}
+                {isConnected ? '🟢 Peer Connected' : '🟡 Waiting for Peer...'}
               </div>
 
-              {/* Link Paylaşımı Kısmı */}
-          {!isConnected && (
-            <>
-              <p style={{ marginBottom: '10px' }}>Send this link to the receiver:</p>
-              
-              {/* QR KOD ALANI (YENİ) */}
-              <div style={{ background: 'white', padding: '10px', width: 'fit-content', margin: '0 auto 20px auto', borderRadius: '8px' }}>
-                  <QRCode value={shareLink} size={128} />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-                <input type="text" readOnly value={shareLink} onClick={(e) => e.currentTarget.select()} />
-                <button onClick={copyToClipboard}>Copy Link</button>
-              </div>
-              
-              {/* ... */}
-            </>
-          )}
-
-              {/* İlerleme ve Durum */}
-          {isConnected && (
-            <div style={{ marginTop: '30px', textAlign: 'left' }}>
-              
-              {/* DURUM: REDDEDİLDİ */}
-              {transferState === 'REJECTED' && (
-                <div style={{ textAlign: 'center', color: '#e74c3c' }}>
-                  <h3>❌ Receiver Rejected the File</h3>
-                  <p>They chose not to download {selectedFile?.name}.</p>
-                  <button onClick={resetTransfer} style={{ marginTop: '15px', background: '#333' }}>
-                    Try Again
-                  </button>
-                </div>
-              )}
-
-              {/* DURUM: NORMAL TRANSFER */}
-              {transferState !== 'REJECTED' && (
+              {!isConnected && (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 'bold' }}>
-                    <span>
-                      {transferState === 'COMPLETED' ? 'Completed' : 
-                       transferState === 'TRANSFERRING' ? 'Sending...' : 
-                       'Waiting for receiver to accept...'}
-                    </span>
-                    <span>%{progress}</span>
+                  <p style={{ marginBottom: '10px' }}>Send this link to the receiver:</p>
+                  
+                  <div style={{ background: 'white', padding: '10px', width: 'fit-content', margin: '0 auto 20px auto', borderRadius: '8px' }}>
+                      <QRCode value={shareLink} size={128} />
                   </div>
-                  <div className="progress-container">
-                    <div className="progress-bar" style={{ width: `${progress}%`, background: transferState === 'ERROR' ? '#e74c3c' : '#28a745' }}></div>
+
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+                    <input type="text" readOnly value={shareLink} onClick={(e) => e.currentTarget.select()} />
+                    <button onClick={copyToClipboard}>Copy Link</button>
                   </div>
+                  <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '15px' }}>
+                    ⚠️ Do not close this tab until transfer is complete.
+                  </p>
                 </>
               )}
 
-              {/* DURUM: TAMAMLANDI */}
-              {transferState === 'COMPLETED' && (
-                <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                   <h3 style={{ color: '#2ecc71' }}>✅ Transfer Successful!</h3>
-                   <button onClick={() => window.location.reload()} style={{ marginTop: '10px', background: '#333' }}>Send Another File</button>
+              {isConnected && (
+                <div style={{ marginTop: '30px', textAlign: 'left' }}>
+                  
+                  {transferState === 'REJECTED' ? (
+                    <div style={{ textAlign: 'center', color: '#e74c3c' }}>
+                      <div style={{ fontSize: '40px', marginBottom: '10px' }}>🚫</div>
+                      <h3>Receiver Rejected</h3>
+                      <p>The receiver chose not to download this file.</p>
+                      <button onClick={resetTransfer} style={{ marginTop: '15px', background: '#333' }}>
+                        Try Again / Select New File
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 'bold' }}>
+                        <span>
+                          {transferState === 'COMPLETED' ? 'Completed' : 
+                           transferState === 'TRANSFERRING' ? 'Sending...' : 
+                           'Waiting for receiver to accept...'}
+                        </span>
+                        <span>%{progress}</span>
+                      </div>
+                      <div className="progress-container">
+                        <div className="progress-bar" style={{ width: `${progress}%`, background: transferState === 'ERROR' ? '#e74c3c' : '#28a745' }}></div>
+                      </div>
+                    </>
+                  )}
+
+                  {transferState === 'COMPLETED' && (
+                    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                       <h3 style={{ color: '#2ecc71' }}>✅ Transfer Successful!</h3>
+                       <button onClick={() => window.location.reload()} style={{ marginTop: '10px', background: '#333' }}>Send Another File</button>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
-              
+
+              {/* LOG PANELİ */}
+              <div style={{ marginTop: '40px', borderTop: '1px solid #333', paddingTop: '20px' }}>
+                  <button 
+                      onClick={() => setShowLogs(!showLogs)}
+                      style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', margin: '0 auto' }}
+                  >
+                      {showLogs ? 'Hide Activity' : 'Show Activity'} 
+                      <span style={{ fontSize: '0.8rem' }}>{showLogs ? '▲' : '▼'}</span>
+                  </button>
+
+                  {showLogs && (
+                      <div style={{ marginTop: '15px', textAlign: 'left', background: '#1a1a1a', borderRadius: '12px', padding: '15px', maxHeight: '200px', overflowY: 'auto', fontSize: '0.85rem' }}>
+                          {logs.map((log, i) => (
+                              <div key={i} style={{ borderBottom: '1px solid #222', paddingBottom: '5px', marginBottom: '5px' }}>
+                                  &gt; {log}
+                              </div>
+                          ))}
+                      </div>
+                  )}
+              </div>
+
             </div>
           )}
         </div>
 
-        {/* SAĞ REKLAM */}
-        <div className="ad-sidebar">
-          📢 Ad Space (160x600)
-        </div>
+        <div className="ad-sidebar">📢 Ad Space (160x600)</div>
       </div>
 
-{/* --- ADSENSE İÇİN SEO İÇERİK BLOĞU --- */}
-      <div style={{ maxWidth: '800px', margin: '80px auto', textAlign: 'left', color: '#888', lineHeight: '1.8' }}>
-        <hr style={{ borderColor: '#333', marginBottom: '40px' }} />
-        
-        <h2>Why Choose AirShift for File Transfer?</h2>
-        <p>
-          In the digital age, sharing large files shouldn't be complicated. AirShift offers a revolutionary approach to file sharing by utilizing <strong>WebRTC technology</strong>. Unlike traditional services like WeTransfer or Google Drive, we do not store your files on any server.
-        </p>
-
-        <h3>🚀 Truly Unlimited File Sharing</h3>
-        <p>
-          Most email services limit attachments to 25MB. Cloud services often require you to pay for extra storage. With AirShift, the only limit is your device's storage. Whether you are sending a 100GB video project or a massive database backup, our P2P AirShift handles it with ease.
-        </p>
-
-        <h3>🔒 End-to-End Encryption & Privacy</h3>
-        <p>
-          Your privacy is our priority. Since your files are streamed directly from the sender to the receiver, there is no "middleman". We cannot see your files, and hackers cannot intercept them from a central server because there isn't one. All data is encrypted using <strong>DTLS (Datagram Transport Layer Security)</strong> standards.
-        </p>
-
-        <h3>⚡ Blazing Fast P2P Speed</h3>
-        <p>
-          Why wait for a file to upload to a server, only to wait again for it to download? AirShift streams data in real-time. If you are on the same Wi-Fi network, transfers happen at local network speeds (LAN), which can be up to 10x faster than cloud uploads.
-        </p>
-
-        <h3>📱 No Registration Required</h3>
-        <p>
-          We believe in simplicity. You don't need to create an account, verify an email, or remember another password. Just select a file, copy the secure link, and share it. It works on Windows, macOS, Android, and iOS directly from the browser.
-        </p>
-      </div>
-      {/* ------------------------------------- */}
-
-    {showToast && <div className="toast">✅ Link copied to clipboard!</div>}
+      {showToast && <div className="toast">✅ Link copied to clipboard!</div>}
     </div>
   );
-  
 };

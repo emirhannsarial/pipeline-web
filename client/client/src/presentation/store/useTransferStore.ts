@@ -6,39 +6,34 @@ import { ReceiveFileUseCase } from '../../core/domain/usecases/ReceiveFileUseCas
 import type { FileMetadata } from '../../core/domain/entities/FileMetadata';
 import { io } from 'socket.io-client';
 
-// Wake Lock Değişkeni
+// --- WAKE LOCK (EKRAN AÇIK TUTMA) ---
 let wakeLock: WakeLockSentinel | null = null;
 
-// Ekranı Kilitleme Fonksiyonu
 const requestWakeLock = async () => {
     if ('wakeLock' in navigator) {
         try {
             wakeLock = await navigator.wakeLock.request('screen');
-            console.log('💡 Screen Wake Lock active (Ekran açık tutuluyor)');
+            console.log('💡 Screen Wake Lock active');
         } catch (err) {
-            // DÜZELTME: 'any' yerine 'as Error' kullanımı
-            const error = err as Error;
-            console.error(`Wake Lock Error: ${error.name}, ${error.message}`);
+            // Wake lock hatası kritik değildir, loglayıp geçiyoruz
+            console.warn('Wake Lock failed:', err);
         }
     }
 };
 
-// Kilidi Kaldırma Fonksiyonu
 const releaseWakeLock = async () => {
     if (wakeLock) {
         try {
             await wakeLock.release();
             wakeLock = null;
-            console.log('🌑 Screen Wake Lock released (Ekran serbest)');
+            console.log('🌑 Screen Wake Lock released');
         } catch (err) {
-            // DÜZELTME: 'any' yerine 'as Error' kullanımı
-            const error = err as Error;
-            console.error(`Wake Lock Release Error: ${error.name}`);
+            console.warn('Wake Lock release failed:', err);
         }
     }
 };
 
-// Server URL
+// --- BAĞIMLILIKLAR ---
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
 const socket = io(SERVER_URL);
 const signalingRepo = new SocketSignalingRepository(socket);
@@ -46,6 +41,7 @@ const peerRepo = new WebRTCPeerRepository();
 const sendFileUseCase = new SendFileUseCase(peerRepo);
 const receiveFileUseCase = new ReceiveFileUseCase();
 
+// --- STATE TİPLERİ ---
 interface TransferState {
     roomId: string;
     connectionStatus: string;
@@ -54,8 +50,9 @@ interface TransferState {
     progress: number;
     selectedFile: File | null;
     incomingMetadata: FileMetadata | null;
+    // REJECTED ve ERROR durumları eklendi
     transferState: 'IDLE' | 'WAITING_ACCEPT' | 'TRANSFERRING' | 'COMPLETED' | 'ERROR' | 'REJECTED';
-    senderLeft: boolean;
+    peerLeft: boolean; // Karşı tarafın koptuğunu anlatan bayrak
     
     // Actions
     createRoom: () => void;
@@ -66,11 +63,13 @@ interface TransferState {
     acceptDownload: () => void; 
     rejectDownload: () => void;
     resetTransfer: () => void;
+    disconnect: () => void;
 }
 
 type GetState = () => TransferState;
 type SetState = (partial: Partial<TransferState>) => void;
 
+// --- STORE ---
 export const useTransferStore = create<TransferState>((set, get) => ({
     roomId: '',
     connectionStatus: 'Idle',
@@ -80,22 +79,31 @@ export const useTransferStore = create<TransferState>((set, get) => ({
     selectedFile: null,
     incomingMetadata: null,
     transferState: 'IDLE',
-    senderLeft: false,
+    peerLeft: false,
 
     addLog: (msg) => set((state) => ({ logs: [...state.logs, msg] })),
 
+    // Tamamen sıfırlama (Yeni transfer için)
     resetTransfer: () => {
         set({ 
             transferState: 'IDLE', 
             progress: 0, 
             incomingMetadata: null,
+            // selectedFile'ı koruyoruz ki gönderici aynı dosyayı tekrar deneyebilsin
         });
-        releaseWakeLock(); // Resetlenince kilidi aç
+        releaseWakeLock();
+    },
+
+    // Uygulamadan çıkış
+    disconnect: () => {
+        window.location.href = '/';
     },
 
     selectFile: (file: File) => {
         set({ selectedFile: file, transferState: 'IDLE', progress: 0 });
-        if (get().connectionStatus.includes('CONNECTED')) {
+        // Eğer zaten bağlıysa, dosya bilgisini hemen gönder
+        const status = get().connectionStatus;
+        if (status.includes('CONNECTED') || status.includes('Bağlandı')) {
              sendMetadata(file);
         }
     },
@@ -105,11 +113,13 @@ export const useTransferStore = create<TransferState>((set, get) => ({
         if (!meta) return;
 
         try {
+            // İndirme penceresini aç
             await receiveFileUseCase.startDownload(meta); 
+            
             set({ transferState: 'TRANSFERRING' });
+            await requestWakeLock(); // Ekranı kilitle
             
-            await requestWakeLock();
-            
+            // Göndericiye "Başla" komutu ver
             peerRepo.sendData(JSON.stringify({ type: 'STATUS', status: 'DOWNLOAD_STARTED' }));
         } catch (error) { 
             get().addLog(`Download cancelled: ${error}`);
@@ -117,49 +127,55 @@ export const useTransferStore = create<TransferState>((set, get) => ({
     },
 
     rejectDownload: () => {
-        set({ incomingMetadata: null, transferState: 'IDLE' });
+        // Alıcı tarafında durumu sıfırla (veya REJECTED yapıp UI gösterebilirsin)
+        set({ incomingMetadata: null, transferState: 'REJECTED' });
+        
+        // Göndericiye haber ver
         peerRepo.sendData(JSON.stringify({ type: 'STATUS', status: 'DOWNLOAD_REJECTED' }));
     },
 
     createRoom: async () => {
         const roomId = import.meta.env.MODE === 'development' ? 'test' : crypto.randomUUID().slice(0, 8);
-        set({ roomId, connectionStatus: 'Link Created. Waiting...' });
+        set({ roomId, connectionStatus: 'Link Created. Waiting...', peerLeft: false });
 
         await signalingRepo.joinRoom(roomId);
         
         signalingRepo.onUserConnected((userId) => {
             get().addLog(`Peer connected: ${userId}`);
-            set({ remotePeerId: userId });
+            set({ remotePeerId: userId, peerLeft: false });
             peerRepo.initialize(true);
             bindPeerEvents(userId, get, set);
         });
 
+        // TypeScript hatasını önlemek için _ kullandık
         signalingRepo.onSignalReceived((_, signal) => peerRepo.signal(signal));
         
         signalingRepo.onPeerDisconnected(() => {
-            set({ senderLeft: true, connectionStatus: 'DISCONNECTED' });
+            set({ peerLeft: true, connectionStatus: 'DISCONNECTED' });
             releaseWakeLock();
         });
     },
 
     joinRoom: async (roomId) => {
-        set({ roomId, connectionStatus: 'Connecting...' });
+        set({ roomId, connectionStatus: 'Connecting...', peerLeft: false });
         await signalingRepo.joinRoom(roomId);
         
         peerRepo.initialize(false);
         bindPeerEvents("WAITING_FOR_SENDER", get, set);
 
         signalingRepo.onSignalReceived((senderId, signal) => {
-            set({ remotePeerId: senderId });
+            set({ remotePeerId: senderId, peerLeft: false });
             peerRepo.signal(signal);
         });
 
         signalingRepo.onPeerDisconnected(() => {
-            set({ senderLeft: true, connectionStatus: 'DISCONNECTED' });
+            set({ peerLeft: true, connectionStatus: 'DISCONNECTED' });
             releaseWakeLock();
         });
     }
 }));
+
+// --- YARDIMCI FONKSİYONLAR ---
 
 function sendMetadata(file: File) {
     const metadata = {
@@ -174,7 +190,6 @@ function sendMetadata(file: File) {
 
 async function startSendingData(file: File, get: GetState, set: SetState) {
     set({ transferState: 'TRANSFERRING' });
-    
     await requestWakeLock();
 
     try {
@@ -184,11 +199,9 @@ async function startSendingData(file: File, get: GetState, set: SetState) {
         set({ transferState: 'COMPLETED' });
         get().addLog("✅ File sent successfully!");
         releaseWakeLock(); 
-    } catch (error) {
-        get().addLog(`❌ Error: ${error}`);
-        set({ transferState: 'ERROR' });
-        releaseWakeLock(); 
-    }
+    } catch {
+            // Not a JSON message, ignore.
+        }
 }
 
 function bindPeerEvents(targetId: string, get: GetState, set: SetState) {
@@ -199,7 +212,9 @@ function bindPeerEvents(targetId: string, get: GetState, set: SetState) {
     });
 
     peerRepo.onConnect(() => {
-        set({ connectionStatus: 'CONNECTED (P2P)', senderLeft: false });
+        set({ connectionStatus: 'CONNECTED (P2P)', peerLeft: false });
+        
+        // Alıcıysak, göndericiye hazır olduğumuzu bildiriyoruz (HELLO)
         if (!get().selectedFile) {
             peerRepo.sendData(JSON.stringify({ type: 'HELLO' }));
         }
@@ -212,13 +227,16 @@ function bindPeerEvents(targetId: string, get: GetState, set: SetState) {
 
         let isCommand = false;
 
+        // JSON Kontrolü (Komutlar için)
         try {
             const textDecoder = new TextDecoder();
             const textString = textDecoder.decode(bufferData);
 
+            // Sadece JSON formatına benziyorsa parse et
             if (textString.trim().startsWith('{') && textString.trim().endsWith('}')) {
                 const msg = JSON.parse(textString);
 
+                // 1. HELLO (Alıcı Hazır)
                 if (msg.type === 'HELLO') {
                     isCommand = true;
                     get().addLog("Receiver is ready.");
@@ -226,31 +244,33 @@ function bindPeerEvents(targetId: string, get: GetState, set: SetState) {
                     if (file) sendMetadata(file);
                 }
 
+                // 2. METADATA (Dosya Bilgisi Geldi)
                 else if (msg.type === 'METADATA') {
                     isCommand = true;
-                    set({ incomingMetadata: msg.payload }); 
+                    set({ incomingMetadata: msg.payload, transferState: 'IDLE' }); 
                     get().addLog(`📄 Offer: ${msg.payload.name}`);
                 }
                 
+                // 3. STATUS (Durum Güncellemeleri)
                 else if (msg.type === 'STATUS') {
                     isCommand = true;
                     if (msg.status === 'DOWNLOAD_STARTED') {
-                        get().addLog("Receiver accepted. Sending started...");
                         const file = get().selectedFile;
                         if (file) startSendingData(file, get, set);
                     }
                     else if (msg.status === 'DOWNLOAD_REJECTED') {
                         get().addLog("Receiver rejected the file.");
-                        set({ transferState: 'IDLE' });
+                        set({ transferState: 'REJECTED' }); // Göndericiye reddedildiğini bildir
                     }
                 }
             }
         } catch {
-            // DÜZELTME: ESLint'i mutlu etmek için yorum ekledik
-            // Not a JSON/Text message, probably binary chunk. Continue.
+            // JSON değilse binary veridir, hatayı yutuyoruz.
         }
 
+        // Binary Veri İşleme (Dosya Parçaları)
         if (!isCommand) {
+            // Sadece TRANSFERRING durumundaysak veriyi işle
             if (get().transferState !== 'TRANSFERRING') return;
 
             receiveFileUseCase.processChunk(bufferData.buffer as ArrayBuffer, (progress) => {
@@ -268,8 +288,10 @@ function bindPeerEvents(targetId: string, get: GetState, set: SetState) {
         set({ connectionStatus: 'ERROR', logs: [...get().logs, `Err: ${err.message}`] });
         releaseWakeLock();
     });
+    
+    // WebRTC koptuğunda
     peerRepo.onClose(() => {
-        set({ connectionStatus: 'DISCONNECTED', senderLeft: true });
+        set({ connectionStatus: 'DISCONNECTED', peerLeft: true });
         releaseWakeLock();
     });
 }
