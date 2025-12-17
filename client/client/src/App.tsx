@@ -20,6 +20,7 @@ function App() {
           alignItems: 'center',
           position: 'sticky', top: 0, zIndex: 100
         }}>
+          <Link to="/" style={{ textDecoration: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '1.8rem' }}>🚀</span>
             <span style={{ 
@@ -33,6 +34,7 @@ function App() {
               AirShift
             </span>
           </div>
+          </Link>
           <div style={{ display: 'flex', gap: '25px', fontSize: '0.95rem' }}>
             <Link to="/" style={{ color: '#ccc', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#fff'} onMouseOut={e => e.currentTarget.style.color = '#ccc'}>Home</Link>
             <Link to="/about" style={{ color: '#ccc', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#fff'} onMouseOut={e => e.currentTarget.style.color = '#ccc'}>How it Works</Link>
