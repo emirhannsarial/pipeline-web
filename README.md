@@ -1,4 +1,4 @@
-# 🚀 PipeLine.web
+# 🚀 AirShift
 
 > **Serverless, Limitless, Secure P2P File Transfer.**
 
@@ -6,7 +6,7 @@
 [![Tech Stack](https://img.shields.io/badge/Tech-React%20%7C%20WebRTC%20%7C%20TypeScript-blue)](https://reactjs.org/)
 [![Architecture](https://img.shields.io/badge/Architecture-Clean%20Architecture-green)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 
-**PipeLine.web** is a modern file sharing application that allows users to send files of **any size** directly from device to device using **WebRTC**. No intermediate servers store your files, ensuring maximum privacy and speed.
+**AirShift** is a modern file sharing application that allows users to send files of **any size** directly from device to device using **WebRTC**. No intermediate servers store your files, ensuring maximum privacy and speed.
 
 ---
 
@@ -65,7 +65,7 @@ Follow these steps to run the project locally.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/emirhannsarial/pipeline-web.git
+git clone https://github.com/emirhannsarial/airshift.git
 cd pipeline-web
 ```
 
